@@ -36,6 +36,7 @@ import (
 	"github.com/IBM-Cloud/terraform-provider-ibm/ibm/service/database"
 	"github.com/IBM-Cloud/terraform-provider-ibm/ibm/service/db2"
 	"github.com/IBM-Cloud/terraform-provider-ibm/ibm/service/directlink"
+	"github.com/IBM-Cloud/terraform-provider-ibm/ibm/service/distributionlist"
 	"github.com/IBM-Cloud/terraform-provider-ibm/ibm/service/dnsservices"
 	"github.com/IBM-Cloud/terraform-provider-ibm/ibm/service/drautomationservice"
 	"github.com/IBM-Cloud/terraform-provider-ibm/ibm/service/enterprise"
@@ -1228,6 +1229,7 @@ func Provider() *schema.Provider {
 			"ibm_cis":                                 cis.ResourceIBMCISInstance(),
 			"ibm_database":                            database.ResourceIBMDatabaseInstance(),
 			"ibm_db2":                                 db2.ResourceIBMDb2Instance(),
+			"ibm_distribution_list_destination":       distributionlist.ResourceIbmDistributionListDestination(),
 			"ibm_cis_domain":                          cis.ResourceIBMCISDomain(),
 			"ibm_cis_domain_settings":                 cis.ResourceIBMCISSettings(),
 			"ibm_cis_firewall":                        cis.ResourceIBMCISFirewallRecord(),
@@ -2104,6 +2106,7 @@ func Validator() validate.ValidatorDict {
 				"ibm_dl_gateway_action":                        directlink.ResourceIBMDLGatewayActionValidator(),
 				"ibm_dl_gateway_macsec_cak":                    directlink.ResourceIBMdlGatewayMacsecCakValidator(),
 				"ibm_database":                                 database.ResourceIBMICDValidator(),
+				"ibm_distribution_list_destination":            distributionlist.ResourceIbmDistributionListDestinationValidator(),
 				"ibm_function_package":                         functions.ResourceIBMFuncPackageValidator(),
 				"ibm_function_action":                          functions.ResourceIBMFuncActionValidator(),
 				"ibm_function_rule":                            functions.ResourceIBMFuncRuleValidator(),
