@@ -29,7 +29,7 @@ You can specify the following arguments for this resource.
 * `destination_id` - (Optional, Forces new resource, String) The GUID of the Event Notifications instance.
   * Constraints: Length must be `36` characters. The value must match regular expression `/^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/`.
 * `destination_type` - (Required, Forces new resource, String) The type of the destination.
-  * Constraints: Allowable values are: `event_notifications`, `email`.
+  * Constraints: Allowable values are: `event_notifications`.
 
 ## Attribute Reference
 

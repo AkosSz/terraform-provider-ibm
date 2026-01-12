@@ -73,7 +73,7 @@ func ResourceIbmDistributionListDestinationValidator() *validate.ResourceValidat
 			ValidateFunctionIdentifier: validate.ValidateAllowedStringValue,
 			Type:                       validate.TypeString,
 			Required:                   true,
-			AllowedValues:              "email, event_notifications",
+			AllowedValues:              "event_notifications",
 		},
 	)
 
