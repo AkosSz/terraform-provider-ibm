@@ -19,13 +19,3 @@ variable "distribution_list_destination_destination_type" {
   type        = string
   default     = "event_notifications"
 }
-variable "distribution_list_destination_email" {
-  description = "The email address for the destination."
-  type        = string
-  default     = "user@example.com"
-}
-variable "distribution_list_destination_name" {
-  description = "The email name for the destination."
-  type        = string
-  default     = "name"
-}

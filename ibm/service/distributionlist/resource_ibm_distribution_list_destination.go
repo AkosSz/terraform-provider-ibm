@@ -11,6 +11,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -31,39 +32,25 @@ func ResourceIbmDistributionListDestination() *schema.Resource {
 		Importer:      &schema.ResourceImporter{},
 
 		Schema: map[string]*schema.Schema{
-			"account_id": &schema.Schema{
+			"account_id": {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validate.InvokeValidator("ibm_distribution_list_destination", "account_id"),
 				Description:  "The IBM Cloud account ID.",
 			},
-			"destination_id": &schema.Schema{
+			"destination_id": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,
 				Description: "The GUID of the Event Notifications instance.",
 			},
-			"destination_type": &schema.Schema{
+			"destination_type": {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validate.InvokeValidator("ibm_distribution_list_destination", "destination_type"),
 				Description:  "The type of the destination.",
-			},
-			"email": &schema.Schema{
-				Type:         schema.TypeString,
-				Optional:     true,
-				ForceNew:     true,
-				ValidateFunc: validate.InvokeValidator("ibm_distribution_list_destination", "email"),
-				Description:  "The email address for the destination.",
-			},
-			"name": &schema.Schema{
-				Type:         schema.TypeString,
-				Optional:     true,
-				ForceNew:     true,
-				ValidateFunc: validate.InvokeValidator("ibm_distribution_list_destination", "name"),
-				Description:  "The email name for the destination.",
 			},
 		},
 	}
@@ -88,23 +75,6 @@ func ResourceIbmDistributionListDestinationValidator() *validate.ResourceValidat
 			Required:                   true,
 			AllowedValues:              "email, event_notifications",
 		},
-		validate.ValidateSchema{
-			Identifier:                 "email",
-			ValidateFunctionIdentifier: validate.ValidateRegexpLen,
-			Type:                       validate.TypeString,
-			Optional:                   true,
-			Regexp:                     `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`,
-			MinValueLength:             3,
-			MaxValueLength:             320,
-		},
-		validate.ValidateSchema{
-			Identifier:                 "name",
-			ValidateFunctionIdentifier: validate.StringLenBetween,
-			Type:                       validate.TypeString,
-			Optional:                   true,
-			MinValueLength:             3,
-			MaxValueLength:             320,
-		},
 	)
 
 	resourceValidator := validate.ResourceValidator{ResourceName: "ibm_distribution_list_destination", Schema: validateSchema}
@@ -126,12 +96,6 @@ func resourceIbmDistributionListDestinationCreate(context context.Context, d *sc
 		bodyModelMap["destination_id"] = d.Get("destination_id")
 	}
 	bodyModelMap["destination_type"] = d.Get("destination_type")
-	if _, ok := d.GetOk("name"); ok {
-		bodyModelMap["name"] = d.Get("name")
-	}
-	if _, ok := d.GetOk("email"); ok {
-		bodyModelMap["email"] = d.Get("email")
-	}
 	createDistributionListDestinationOptions.SetAccountID(d.Get("account_id").(string))
 	convertedModel, err := ResourceIbmDistributionListDestinationMapToAddDestinationPrototype(bodyModelMap)
 	if err != nil {
@@ -146,10 +110,7 @@ func resourceIbmDistributionListDestinationCreate(context context.Context, d *sc
 		return tfErr.GetDiag()
 	}
 
-	if _, ok := addDestinationIntf.(*distributionlistv1.AddDestinationEmailDestination); ok {
-		addDestination := addDestinationIntf.(*distributionlistv1.AddDestinationEmailDestination)
-		d.SetId(fmt.Sprintf("%s/%s", *createDistributionListDestinationOptions.AccountID, *addDestination.DestinationID))
-	} else if _, ok := addDestinationIntf.(*distributionlistv1.AddDestinationEventNotificationDestination); ok {
+	if _, ok := addDestinationIntf.(*distributionlistv1.AddDestinationEventNotificationDestination); ok {
 		addDestination := addDestinationIntf.(*distributionlistv1.AddDestinationEventNotificationDestination)
 		d.SetId(fmt.Sprintf("%s/%s", *createDistributionListDestinationOptions.AccountID, *addDestination.DestinationID))
 	} else if _, ok := addDestinationIntf.(*distributionlistv1.AddDestination); ok {
@@ -191,32 +152,12 @@ func resourceIbmDistributionListDestinationRead(context context.Context, d *sche
 		return tfErr.GetDiag()
 	}
 
-	if _, ok := addDestinationIntf.(*distributionlistv1.AddDestinationEmailDestination); ok {
-		addDestination := addDestinationIntf.(*distributionlistv1.AddDestinationEmailDestination)
-		if !core.IsNil(addDestination.DestinationID) {
-			if err = d.Set("destination_id", addDestination.DestinationID); err != nil {
-				err = fmt.Errorf("Error setting destination_id: %s", err)
-				return flex.DiscriminatedTerraformErrorf(err, err.Error(), "ibm_distribution_list_destination", "read", "set-destination_id").GetDiag()
-			}
-		}
-		if err = d.Set("destination_type", addDestination.DestinationType); err != nil {
-			err = fmt.Errorf("Error setting destination_type: %s", err)
-			return flex.DiscriminatedTerraformErrorf(err, err.Error(), "ibm_distribution_list_destination", "read", "set-destination_type").GetDiag()
-		}
-		if !core.IsNil(addDestination.Email) {
-			if err = d.Set("email", addDestination.Email); err != nil {
-				err = fmt.Errorf("Error setting email: %s", err)
-				return flex.DiscriminatedTerraformErrorf(err, err.Error(), "ibm_distribution_list_destination", "read", "set-email").GetDiag()
-			}
-		}
-		if !core.IsNil(addDestination.Name) {
-			if err = d.Set("name", addDestination.Name); err != nil {
-				err = fmt.Errorf("Error setting name: %s", err)
-				return flex.DiscriminatedTerraformErrorf(err, err.Error(), "ibm_distribution_list_destination", "read", "set-name").GetDiag()
-			}
-		}
-	} else if _, ok := addDestinationIntf.(*distributionlistv1.AddDestinationEventNotificationDestination); ok {
+	if _, ok := addDestinationIntf.(*distributionlistv1.AddDestinationEventNotificationDestination); ok {
 		addDestination := addDestinationIntf.(*distributionlistv1.AddDestinationEventNotificationDestination)
+		if err = d.Set("account_id", getDistributionListDestinationOptions.AccountID); err != nil {
+			err = fmt.Errorf("Error setting account_id: %s", err)
+			return flex.DiscriminatedTerraformErrorf(err, err.Error(), "ibm_distribution_list_destination", "read", "set-account_id").GetDiag()
+		}
 		if !core.IsNil(addDestination.DestinationID) {
 			if err = d.Set("destination_id", addDestination.DestinationID); err != nil {
 				err = fmt.Errorf("Error setting destination_id: %s", err)
@@ -235,8 +176,6 @@ func resourceIbmDistributionListDestinationRead(context context.Context, d *sche
 		}
 		// parent class argument: destination_id strfmt.UUID
 		// parent class argument: destination_type string
-		// parent class argument: email string
-		// parent class argument: name string
 		if !core.IsNil(addDestination.DestinationID) {
 			if err = d.Set("destination_id", addDestination.DestinationID); err != nil {
 				err = fmt.Errorf("Error setting destination_id: %s", err)
@@ -246,18 +185,6 @@ func resourceIbmDistributionListDestinationRead(context context.Context, d *sche
 		if err = d.Set("destination_type", addDestination.DestinationType); err != nil {
 			err = fmt.Errorf("Error setting destination_type: %s", err)
 			return flex.DiscriminatedTerraformErrorf(err, err.Error(), "ibm_distribution_list_destination", "read", "set-destination_type").GetDiag()
-		}
-		if !core.IsNil(addDestination.Email) {
-			if err = d.Set("email", addDestination.Email); err != nil {
-				err = fmt.Errorf("Error setting email: %s", err)
-				return flex.DiscriminatedTerraformErrorf(err, err.Error(), "ibm_distribution_list_destination", "read", "set-email").GetDiag()
-			}
-		}
-		if !core.IsNil(addDestination.Name) {
-			if err = d.Set("name", addDestination.Name); err != nil {
-				err = fmt.Errorf("Error setting name: %s", err)
-				return flex.DiscriminatedTerraformErrorf(err, err.Error(), "ibm_distribution_list_destination", "read", "set-name").GetDiag()
-			}
 		}
 	} else {
 		return flex.DiscriminatedTerraformErrorf(nil, fmt.Sprintf("Unrecognized distributionlistv1.AddDestinationIntf subtype encountered"), "ibm_distribution_list_destination", "read", "unrecognized-subtype-of-AddDestination").GetDiag()
@@ -301,8 +228,6 @@ func ResourceIbmDistributionListDestinationMapToAddDestinationPrototype(modelMap
 	if ok {
 		if discValue == "event_notifications" {
 			return ResourceIbmDistributionListDestinationMapToAddDestinationPrototypeEventNotificationDestinationPrototype(modelMap)
-		} else if discValue == "email" {
-			return ResourceIbmDistributionListDestinationMapToAddDestinationPrototypeEmailDestinationPrototype(modelMap)
 		} else {
 			return nil, fmt.Errorf("unexpected value for discriminator property 'destination_type' found in map: '%s'", discValue)
 		}
@@ -311,16 +236,34 @@ func ResourceIbmDistributionListDestinationMapToAddDestinationPrototype(modelMap
 	}
 }
 
-func ResourceIbmDistributionListDestinationMapToAddDestinationPrototypeEmailDestinationPrototype(modelMap map[string]interface{}) (*distributionlistv1.AddDestinationPrototypeEmailDestinationPrototype, error) {
-	model := &distributionlistv1.AddDestinationPrototypeEmailDestinationPrototype{}
-	model.Name = core.StringPtr(modelMap["name"].(string))
-	model.Email = core.StringPtr(modelMap["email"].(string))
-	model.DestinationType = core.StringPtr(modelMap["destination_type"].(string))
-	return model, nil
+func ValidateDiscriminationFields(modelMap map[string]interface{}, allowedKeys []string, destinationType string) error {
+	allowedKeysMap := make(map[string]bool)
+	for _, key := range allowedKeys {
+		allowedKeysMap[key] = true
+	}
+
+	var unexpectedKeys []string
+	for key, value := range modelMap {
+		if !allowedKeysMap[key] && value != nil {
+			unexpectedKeys = append(unexpectedKeys, key)
+		}
+	}
+
+	if len(unexpectedKeys) > 0 {
+		return fmt.Errorf("unexpected properties (%s) should not be present for destination_type '%s'", strings.Join(unexpectedKeys, " "), destinationType)
+	}
+
+	return nil
 }
 
 func ResourceIbmDistributionListDestinationMapToAddDestinationPrototypeEventNotificationDestinationPrototype(modelMap map[string]interface{}) (*distributionlistv1.AddDestinationPrototypeEventNotificationDestinationPrototype, error) {
 	model := &distributionlistv1.AddDestinationPrototypeEventNotificationDestinationPrototype{}
+
+	allowedKeys := []string{"destination_id", "destination_type"}
+	if err := ValidateDiscriminationFields(modelMap, allowedKeys, "event_notifications"); err != nil {
+		return nil, err
+	}
+
 	model.DestinationID = core.UUIDPtr(strfmt.UUID(modelMap["destination_id"].(string)))
 	model.DestinationType = core.StringPtr(modelMap["destination_type"].(string))
 	return model, nil

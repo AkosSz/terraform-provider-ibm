@@ -7,11 +7,10 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/IBM-Cloud/terraform-provider-ibm/ibm/unittest"
+	"github.com/go-openapi/strfmt"
 
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	acc "github.com/IBM-Cloud/terraform-provider-ibm/ibm/acctest"
 	"github.com/IBM-Cloud/terraform-provider-ibm/ibm/conns"
@@ -24,7 +23,8 @@ import (
 
 func TestAccIbmDistributionListDestinationBasic(t *testing.T) {
 	var conf distributionlistv1.AddDestination
-	accountID := fmt.Sprintf("tf_account_id_%d", acctest.RandIntRange(10, 100))
+	accountID := acc.DistributionListAccountId
+	destinationId := acc.DistributionListDestinationId
 	destinationType := "event_notifications"
 
 	resource.Test(t, resource.TestCase{
@@ -32,41 +32,16 @@ func TestAccIbmDistributionListDestinationBasic(t *testing.T) {
 		Providers:    acc.TestAccProviders,
 		CheckDestroy: testAccCheckIbmDistributionListDestinationDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
-				Config: testAccCheckIbmDistributionListDestinationConfigBasic(accountID, destinationType),
+			{
+				Config: testAccCheckIbmDistributionListDestinationConfigBasic(accountID, destinationType, destinationId),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					testAccCheckIbmDistributionListDestinationExists("ibm_distribution_list_destination.distribution_list_destination_instance", conf),
 					resource.TestCheckResourceAttr("ibm_distribution_list_destination.distribution_list_destination_instance", "account_id", accountID),
 					resource.TestCheckResourceAttr("ibm_distribution_list_destination.distribution_list_destination_instance", "destination_type", destinationType),
+					resource.TestCheckResourceAttr("ibm_distribution_list_destination.distribution_list_destination_instance", "destination_id", destinationId),
 				),
 			},
-		},
-	})
-}
-
-func TestAccIbmDistributionListDestinationAllArgs(t *testing.T) {
-	var conf distributionlistv1.AddDestination
-	accountID := fmt.Sprintf("tf_account_id_%d", acctest.RandIntRange(10, 100))
-	destinationType := "event_notifications"
-	email := fmt.Sprintf("tf_email_%d@host.org", acctest.RandIntRange(10, 100))
-	name := fmt.Sprintf("tf_name_%d", acctest.RandIntRange(10, 100))
-
-	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { acc.TestAccPreCheck(t) },
-		Providers:    acc.TestAccProviders,
-		CheckDestroy: testAccCheckIbmDistributionListDestinationDestroy,
-		Steps: []resource.TestStep{
-			resource.TestStep{
-				Config: testAccCheckIbmDistributionListDestinationConfig(accountID, destinationType, email, name),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					testAccCheckIbmDistributionListDestinationExists("ibm_distribution_list_destination.distribution_list_destination_instance", conf),
-					resource.TestCheckResourceAttr("ibm_distribution_list_destination.distribution_list_destination_instance", "account_id", accountID),
-					resource.TestCheckResourceAttr("ibm_distribution_list_destination.distribution_list_destination_instance", "destination_type", destinationType),
-					resource.TestCheckResourceAttr("ibm_distribution_list_destination.distribution_list_destination_instance", "email", email),
-					resource.TestCheckResourceAttr("ibm_distribution_list_destination.distribution_list_destination_instance", "name", name),
-				),
-			},
-			resource.TestStep{
+			{
 				ResourceName:      "ibm_distribution_list_destination.distribution_list_destination_instance",
 				ImportState:       true,
 				ImportStateVerify: true,
@@ -75,26 +50,14 @@ func TestAccIbmDistributionListDestinationAllArgs(t *testing.T) {
 	})
 }
 
-func testAccCheckIbmDistributionListDestinationConfigBasic(accountID string, destinationType string) string {
+func testAccCheckIbmDistributionListDestinationConfigBasic(accountID string, destinationType string, destinationId string) string {
 	return fmt.Sprintf(`
 		resource "ibm_distribution_list_destination" "distribution_list_destination_instance" {
 			account_id = "%s"
 			destination_type = "%s"
+			destination_id = "%s"
 		}
-	`, accountID, destinationType)
-}
-
-func testAccCheckIbmDistributionListDestinationConfig(accountID string, destinationType string, email string, name string) string {
-	return fmt.Sprintf(`
-
-		resource "ibm_distribution_list_destination" "distribution_list_destination_instance" {
-			account_id = "%s"
-			destination_id = "9fab83da-98cb-4f18-a7ba-b6f0435c9673"
-			destination_type = "%s"
-			email = "%s"
-			name = "%s"
-		}
-	`, accountID, destinationType, email, name)
+	`, accountID, destinationType, destinationId)
 }
 
 func testAccCheckIbmDistributionListDestinationExists(n string, obj distributionlistv1.AddDestination) resource.TestCheckFunc {
@@ -125,8 +88,17 @@ func testAccCheckIbmDistributionListDestinationExists(n string, obj distribution
 			return err
 		}
 
-		addDestination := addDestinationIntf.(*distributionlistv1.AddDestination)
-		obj = *addDestination
+		switch v := addDestinationIntf.(type) {
+		case *distributionlistv1.AddDestinationEventNotificationDestination:
+			obj = distributionlistv1.AddDestination{
+				DestinationID:   v.DestinationID,
+				DestinationType: v.DestinationType,
+			}
+		case *distributionlistv1.AddDestination:
+			obj = *v
+		default:
+			return fmt.Errorf("unexpected destination type: %T", addDestinationIntf)
+		}
 		return nil
 	}
 }
@@ -168,39 +140,18 @@ func TestResourceIbmDistributionListDestinationMapToAddDestinationPrototype(t *t
 	// Checking the result is disabled for this model, because it has a discriminator
 	// and there are separate tests for each child model below.
 	model := make(map[string]interface{})
-	model["destination_id"] = "12345678-1234-1234-1234-123456789012"
+	model["destination_id"] = acc.DistributionListDestinationId
 	model["destination_type"] = "event_notifications"
-	model["name"] = "testString"
-	model["email"] = "user@example.com"
 
 	_, err := distributionlist.ResourceIbmDistributionListDestinationMapToAddDestinationPrototype(model)
 	assert.Nil(t, err)
 }
 
-func TestResourceIbmDistributionListDestinationMapToAddDestinationPrototypeEmailDestinationPrototype(t *testing.T) {
-	checkResult := func(result *distributionlistv1.AddDestinationPrototypeEmailDestinationPrototype) {
-		model := new(distributionlistv1.AddDestinationPrototypeEmailDestinationPrototype)
-		model.Name = core.StringPtr("testString")
-		model.Email = core.StringPtr("user@example.com")
-		model.DestinationType = core.StringPtr("email")
-
-		assert.Equal(t, result, model)
-	}
-
-	model := make(map[string]interface{})
-	model["name"] = "testString"
-	model["email"] = "user@example.com"
-	model["destination_type"] = "email"
-
-	result, err := distributionlist.ResourceIbmDistributionListDestinationMapToAddDestinationPrototypeEmailDestinationPrototype(model)
-	assert.Nil(t, err)
-	checkResult(result)
-}
-
 func TestResourceIbmDistributionListDestinationMapToAddDestinationPrototypeEventNotificationDestinationPrototype(t *testing.T) {
 	checkResult := func(result *distributionlistv1.AddDestinationPrototypeEventNotificationDestinationPrototype) {
 		model := new(distributionlistv1.AddDestinationPrototypeEventNotificationDestinationPrototype)
-		model.DestinationID = CreateMockUUID("12345678-1234-1234-1234-123456789012")
+		mock := strfmt.UUID("12345678-1234-1234-1234-123456789012")
+		model.DestinationID = &mock
 		model.DestinationType = core.StringPtr("event_notifications")
 
 		assert.Equal(t, result, model)

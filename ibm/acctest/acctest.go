@@ -471,6 +471,12 @@ var (
 	PcsIamServiceRegistrationId                       string
 )
 
+// For Distribution List
+var (
+	DistributionListAccountId     string
+	DistributionListDestinationId string
+)
+
 // For cluster
 var (
 	ISClusterNetworkProfileName        string
@@ -2215,6 +2221,16 @@ func init() {
 	PcsRegistrationAccountId = os.Getenv("PCS_REGISTRATION_ACCOUNT_ID")
 	if PcsRegistrationAccountId == "" {
 		fmt.Println("[WARN] Set the environment variable PCS_REGISTRATION_ACCOUNT_ID for testing iam_onboarding resource else tests will fail if this is not set correctly")
+	}
+
+	DistributionListAccountId = os.Getenv("DIST_ACCOUNT_ID")
+	if DistributionListAccountId == "" {
+		fmt.Println("[WARN] Set the environment variable DIST_ACCOUNT_ID for testing ibm_distribution_list resource else tests will fail if this is not set correctly")
+	}
+
+	DistributionListDestinationId = os.Getenv("DIST_DESTINATION_ID")
+	if DistributionListDestinationId == "" {
+		fmt.Println("[WARN] Set the environment variable DIST_DESTINATION_ID for testing ibm_distribution_list resource else tests will fail if this is not set correctly")
 	}
 
 	PcsOnboardingProductWithApprovedProgrammaticName = os.Getenv("PCS_PRODUCT_WITH_APPROVED_PROGRAMMATIC_NAME")

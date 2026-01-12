@@ -26,8 +26,6 @@ resource "ibm_distribution_list_destination" "distribution_list_destination_inst
   account_id = var.distribution_list_destination_account_id
   destination_id = var.distribution_list_destination_destination_id
   destination_type = var.distribution_list_destination_destination_type
-  email = var.distribution_list_destination_email
-  name = var.distribution_list_destination_name
 }
 ```
 
@@ -39,8 +37,6 @@ resource "ibm_distribution_list_destination" "distribution_list_destination_inst
 | account_id | The IBM Cloud account ID. | `string` | true |
 | destination_id | The GUID of the Event Notifications instance. | `` | false |
 | destination_type | The type of the destination. | `string` | true |
-| email | The email address for the destination. | `string` | false |
-| name | The email name for the destination. | `string` | false |
 
 
 ## Assumptions

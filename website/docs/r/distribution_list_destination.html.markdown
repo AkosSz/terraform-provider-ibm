@@ -17,7 +17,6 @@ resource "ibm_distribution_list_destination" "distribution_list_destination_inst
   account_id = "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
   destination_id = 12345678-1234-1234-1234-123456789012
   destination_type = "event_notifications"
-  email = "user@example.com"
 }
 ```
 
@@ -31,10 +30,6 @@ You can specify the following arguments for this resource.
   * Constraints: Length must be `36` characters. The value must match regular expression `/^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/`.
 * `destination_type` - (Required, Forces new resource, String) The type of the destination.
   * Constraints: Allowable values are: `event_notifications`, `email`.
-* `email` - (Optional, Forces new resource, String) The email address for the destination.
-  * Constraints: The maximum length is `320` characters. The minimum length is `3` characters. The value must match regular expression `/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/`.
-* `name` - (Optional, Forces new resource, String) The email name for the destination.
-  * Constraints: The maximum length is `320` characters. The minimum length is `3` characters.
 
 ## Attribute Reference
 
