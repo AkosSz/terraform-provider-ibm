@@ -40,10 +40,11 @@ func ResourceIbmDistributionListDestination() *schema.Resource {
 				Description:  "The IBM Cloud account ID.",
 			},
 			"destination_id": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				ForceNew:    true,
-				Description: "The GUID of the Event Notifications instance.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ForceNew:     true,
+				ValidateFunc: validate.InvokeValidator("ibm_distribution_list_destination", "destination_id"),
+				Description:  "The GUID of the Event Notifications instance.",
 			},
 			"destination_type": {
 				Type:         schema.TypeString,
@@ -74,6 +75,15 @@ func ResourceIbmDistributionListDestinationValidator() *validate.ResourceValidat
 			Type:                       validate.TypeString,
 			Required:                   true,
 			AllowedValues:              "event_notifications",
+		},
+		validate.ValidateSchema{
+			Identifier:                 "destination_id",
+			Type:                       validate.TypeString,
+			ValidateFunctionIdentifier: validate.ValidateRegexpLen,
+			Optional:                   true,
+			Regexp:                     `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`,
+			MinValueLength:             36,
+			MaxValueLength:             36,
 		},
 	)
 
@@ -258,6 +268,14 @@ func ValidateDiscriminationFields(modelMap map[string]interface{}, allowedKeys [
 
 func ResourceIbmDistributionListDestinationMapToAddDestinationPrototypeEventNotificationDestinationPrototype(modelMap map[string]interface{}) (*distributionlistv1.AddDestinationPrototypeEventNotificationDestinationPrototype, error) {
 	model := &distributionlistv1.AddDestinationPrototypeEventNotificationDestinationPrototype{}
+
+	if _, ok := modelMap["destination_id"]; !ok {
+		return nil, fmt.Errorf("destination_id not found in map")
+	}
+
+	if _, ok := modelMap["destination_type"]; !ok {
+		return nil, fmt.Errorf("destination_type not found in map")
+	}
 
 	allowedKeys := []string{"destination_id", "destination_type"}
 	if err := ValidateDiscriminationFields(modelMap, allowedKeys, "event_notifications"); err != nil {
